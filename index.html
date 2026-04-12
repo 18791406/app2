@@ -1,1 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reserva de Mesas</title>
+    <style>
+        /* Estilos generales y Layout */
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
 
+        /* Menú lateral izquierdo */
+        .sidebar {
+            width: 300px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 25px;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            z-index: 10;
+        }
+        .sidebar h2 {
+            margin-top: 0;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #bdc3c7;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: none;
+            border-radius: 4px;
+            background-color: #ecf0f1;
+            color: #2c3e50;
+        }
+        button {
+            padding: 12px;
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 20px;
+            transition: background-color 0.3s;
+        }
+        button:disabled {
+            background-color: #7f8c8d;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #2ecc71;
+        }
+        #mensaje-estado {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #f1c40f;
+        }
+
+        /* Área principal - Representación gráfica del restaurante */
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+        }
+        .status-legend {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+        .dot { width: 16px; height: 16px; border-radius: 50%; }
+        .dot.available { background-color: #ecf0f1; border: 2px solid #bdc3c7; }
+        .dot.selected { background-color: #3498db; }
+        .dot.occupied { background-color: #e74c3c; }
+
+        /* Plano de mesas */
+        .floor-plan {
+            flex: 1;
+            background-color: white;
+            border-radius: 12px;
+            border: 2px dashed #bdc3c7;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+            align-content: center;
+            padding: 40px;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+        }
+
+        /* Estilos de las mesas individuales */
+        .table {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%; /* Cambia a 10px si prefieres mesas cuadradas */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .table.available {
+            background-color: #ecf0f1;
+            border: 4px solid #bdc3c7;
+            color: #7f8c8d;
+        }
+        .table.available:hover {
+            background-color: #e0e6e8;
+            transform: translateY(-2px);
+        }
+        .table.selected {
+            background-color: #3498db;
+            border: 4px solid #2980b9;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 8px 15px rgba(52, 152, 219, 0.4);
+        }
+        .table.occupied {
+            background-color: #e74c3c;
+            border: 4px solid #c0392b;
+            color: white;
+            cursor: not-allowed;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <h2>Detalles de Reserva</h2>
+        <div class="form-group">
+            <label for="nombre">Nombre a reservar:</label>
+            <input type="text" id="nombre" placeholder="Ej. Juan Pérez" autocomplete="off">
+        </div>
+        <div class="form-group">
+            <label for="personas">Cantidad de personas:</label>
+            <select id="personas">
+                <option value="2">2 Personas</option>
+                <option value="4">4 Personas</option>
+                <option value="6">6 Personas</option>
+                <option value="8">8 Personas</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="fecha">Fecha:</label>
+            <input type="date" id="fecha">
+        </div>
+        
+        <p id="mensaje-estado">Selecciona una mesa disponible en el panel derecho.</p>
+        
+        <button id="btn-reservar" disabled>Confirmar Reserva</button>
+    </aside>
+
+    <main class="main-content">
+        <div class="status-legend">
+            <div class="legend-item"><div class="dot available"></div> Disponible</div>
+            <div class="legend-item"><div class="dot selected"></div> Tu Selección</div>
+            <div class="legend-item"><div class="dot occupied"></div> Ocupada</div>
+        </div>
+
+        <div class="floor-plan" id="floor-plan">
+            </div>
+    </main>
+
+    <script>
+        // Configuración inicial de mesas (puedes agregar más o cambiar sus estados)
+        const mesas = [
+            { id: 1, estado: 'available' },
+            { id: 2, estado: 'available' },
+            { id: 3, estado: 'occupied' }, // Mesa ya reservada
+            { id: 4, estado: 'available' },
+            { id: 5, estado: 'available' },
+            { id: 6, estado: 'occupied' },
+            { id: 7, estado: 'available' },
+            { id: 8, estado: 'available' }
+        ];
+
+        let mesaSeleccionada = null;
+        const floorPlan = document.getElementById('floor-plan');
+        const btnReservar = document.getElementById('btn-reservar');
+        const mensajeEstado = document.getElementById('mensaje-estado');
+        const inputNombre = document.getElementById('nombre');
+
+        // Función para renderizar el plano de mesas
+        function renderizarMesas() {
+            floorPlan.innerHTML = ''; // Limpiar panel
+
+            mesas.forEach(mesa => {
+                const mesaDiv = document.createElement('div');
+                mesaDiv.classList.add('table', mesa.estado);
+                
+                // Si es la mesa actualmente seleccionada, agregar la clase correspondiente
+                if (mesa.id === mesaSeleccionada) {
+                    mesaDiv.classList.add('selected');
+                    mesaDiv.classList.remove('available');
+                }
+
+                mesaDiv.innerText = mesa.id;
+
+                // Evento de clic en la mesa
+                mesaDiv.addEventListener('click', () => {
+                    if (mesa.estado === 'occupied') return; // No hacer nada si está ocupada
+
+                    // Alternar selección
+                    if (mesaSeleccionada === mesa.id) {
+                        mesaSeleccionada = null; // Deseleccionar
+                        mensajeEstado.innerText = "Selecciona una mesa disponible en el panel derecho.";
+                        btnReservar.disabled = true;
+                    } else {
+                        mesaSeleccionada = mesa.id; // Seleccionar nueva
+                        mensajeEstado.innerText = `Mesa ${mesa.id} seleccionada. Completa tus datos.`;
+                        btnReservar.disabled = false;
+                    }
+                    renderizarMesas(); // Actualizar vista
+                });
+
+                floorPlan.appendChild(mesaDiv);
+            });
+        }
+
+        // Evento del botón reservar
+        btnReservar.addEventListener('click', () => {
+            const nombre = inputNombre.value.trim();
+            
+            if (nombre === '') {
+                alert('Por favor, ingresa un nombre para la reserva.');
+                return;
+            }
+
+            // Cambiar el estado de la mesa seleccionada a ocupada
+            const mesaIndex = mesas.findIndex(m => m.id === mesaSeleccionada);
+            if (mesaIndex !== -1) {
+                mesas[mesaIndex].estado = 'occupied';
+                alert(`¡Reserva confirmada para ${nombre} en la Mesa ${mesaSeleccionada}!`);
+                
+                // Limpiar formulario y estado
+                mesaSeleccionada = null;
+                inputNombre.value = '';
+                btnReservar.disabled = true;
+                mensajeEstado.innerText = "Selecciona una mesa disponible en el panel derecho.";
+                
+                renderizarMesas(); // Actualizar el gráfico
+            }
+        });
+
+        // Inicializar la aplicación
+        renderizarMesas();
+    </script>
+</body>
+</html>
