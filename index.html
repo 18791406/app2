@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reserva de Mesas</title>
+    <title>Reserva de Mesas Rectangulares</title>
     <style>
         /* Estilos generales y Layout */
         body {
@@ -12,6 +12,7 @@
             display: flex;
             height: 100vh;
             background-color: #f4f4f9;
+            overflow: hidden; /* Evita scroll doble */
         }
 
         /* Menú lateral izquierdo */
@@ -24,6 +25,7 @@
             display: flex;
             flex-direction: column;
             z-index: 10;
+            flex-shrink: 0; /* No se encoge */
         }
         .sidebar h2 {
             margin-top: 0;
@@ -71,14 +73,16 @@
             margin-top: 15px;
             font-size: 14px;
             color: #f1c40f;
+            min-height: 40px;
         }
 
-        /* Área principal - Representación gráfica del restaurante */
+        /* Área principal - Representación gráfica */
         .main-content {
             flex: 1;
             padding: 30px;
             display: flex;
             flex-direction: column;
+            background-color: #e9ecef;
         }
         .status-legend {
             display: flex;
@@ -88,6 +92,7 @@
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            flex-shrink: 0;
         }
         .legend-item {
             display: flex;
@@ -96,31 +101,57 @@
             font-size: 14px;
             color: #333;
         }
-        .dot { width: 16px; height: 16px; border-radius: 50%; }
+        .dot { width: 16px; height: 16px; border-radius: 4px; } /* Rectangulares pequeñas */
         .dot.available { background-color: #ecf0f1; border: 2px solid #bdc3c7; }
         .dot.selected { background-color: #3498db; }
         .dot.occupied { background-color: #e74c3c; }
 
-        /* Plano de mesas */
-        .floor-plan {
+        /* Contenedor del plano con scroll si es necesario */
+        .floor-plan-container {
             flex: 1;
             background-color: white;
             border-radius: 12px;
             border: 2px dashed #bdc3c7;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 40px;
-            justify-content: center;
-            align-content: center;
             padding: 40px;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+            display: flex;
+            justify-content: center; /* Centra la cuadrícula horizontalmente */
+            align-items: center;     /* Centra la cuadrícula verticalmente */
+            overflow: auto;
         }
 
-        /* Estilos de las mesas individuales */
+        /* Plano de mesas usando CSS GRID para la organización 3x3 */
+        .floor-plan {
+            display: grid;
+            /* Define 2 columnas principales con un pasillo ancho en medio */
+            grid-template-columns: repeat(1, 150px) 100px repeat(1, 150px); 
+            /* Define 3 filas */
+            grid-template-rows: repeat(3, 100px);
+            gap: 30px 0; /* Espacio vertical entre filas, 0 horizontal (usamos la columna pasillo) */
+            justify-items: center;
+            align-items: center;
+        }
+
+        /* Pasillo central virtual */
+        .aisle {
+            grid-column: 2;
+            grid-row: 1 / span 3; /* Ocupa las 3 filas */
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #bdc3c7;
+            font-weight: bold;
+            letter-spacing: 2px;
+            border-left: 2px dashed #eee;
+            border-right: 2px dashed #eee;
+        }
+
+        /* Estilos de las mesas individuales RECTANGULARES */
         .table {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%; /* Cambia a 10px si prefieres mesas cuadradas */
+            width: 140px;  /* Más anchas */
+            height: 80px;  /* Menos altas */
+            border-radius: 8px; /* Esquinas ligeramente redondeadas */
             display: flex;
             justify-content: center;
             align-items: center;
@@ -128,8 +159,23 @@
             font-size: 18px;
             cursor: pointer;
             transition: all 0.2s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            position: relative;
         }
+
+        /* Sillas decorativas para dar contexto de rectángulo */
+        .table::before, .table::after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 10px;
+            background-color: #ccc;
+            border-radius: 2px;
+        }
+        /* Sillas arriba y abajo */
+        .table::before { top: -15px; left: 55px; } 
+        .table::after { bottom: -15px; left: 55px; }
+
         .table.available {
             background-color: #ecf0f1;
             border: 4px solid #bdc3c7;
@@ -137,22 +183,37 @@
         }
         .table.available:hover {
             background-color: #e0e6e8;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
         .table.selected {
             background-color: #3498db;
             border: 4px solid #2980b9;
             color: white;
-            transform: scale(1.1);
+            transform: scale(1.05);
             box-shadow: 0 8px 15px rgba(52, 152, 219, 0.4);
         }
+        .table.selected::before, .table.selected::after { background-color: #2980b9; }
+
         .table.occupied {
             background-color: #e74c3c;
             border: 4px solid #c0392b;
             color: white;
             cursor: not-allowed;
-            opacity: 0.8;
+            opacity: 0.7;
         }
+        .table.occupied::before, .table.occupied::after { background-color: #c0392b; }
+
+        /* Posicionamiento específico de las mesas en la cuadrícula */
+        /* Lado Izquierdo (Columna 1) */
+        .t1 { grid-column: 1; grid-row: 1; }
+        .t2 { grid-column: 1; grid-row: 2; }
+        .t3 { grid-column: 1; grid-row: 3; }
+        /* Lado Derecho (Columna 3) */
+        .t4 { grid-column: 3; grid-row: 1; }
+        .t5 { grid-column: 3; grid-row: 2; }
+        .t6 { grid-column: 3; grid-row: 3; }
+
     </style>
 </head>
 <body>
@@ -166,10 +227,8 @@
         <div class="form-group">
             <label for="personas">Cantidad de personas:</label>
             <select id="personas">
-                <option value="2">2 Personas</option>
                 <option value="4">4 Personas</option>
                 <option value="6">6 Personas</option>
-                <option value="8">8 Personas</option>
             </select>
         </div>
         <div class="form-group">
@@ -177,7 +236,7 @@
             <input type="date" id="fecha">
         </div>
         
-        <p id="mensaje-estado">Selecciona una mesa disponible en el panel derecho.</p>
+        <p id="mensaje-estado">Selecciona una mesa rectangular.</p>
         
         <button id="btn-reservar" disabled>Confirmar Reserva</button>
     </aside>
@@ -189,21 +248,24 @@
             <div class="legend-item"><div class="dot occupied"></div> Ocupada</div>
         </div>
 
-        <div class="floor-plan" id="floor-plan">
-            </div>
+        <div class="floor-plan-container">
+            <div class="floor-plan" id="floor-plan">
+                <div class="aisle">PASILLO</div>
+                </div>
+        </div>
     </main>
 
     <script>
-        // Configuración inicial de mesas (puedes agregar más o cambiar sus estados)
+        // Configuración de 6 mesas
         const mesas = [
-            { id: 1, estado: 'available' },
-            { id: 2, estado: 'available' },
-            { id: 3, estado: 'occupied' }, // Mesa ya reservada
-            { id: 4, estado: 'available' },
-            { id: 5, estado: 'available' },
-            { id: 6, estado: 'occupied' },
-            { id: 7, estado: 'available' },
-            { id: 8, estado: 'available' }
+            // Lado Izquierdo
+            { id: 1, estado: 'available', clasePos: 't1' },
+            { id: 2, estado: 'occupied',  clasePos: 't2' },
+            { id: 3, estado: 'available', clasePos: 't3' },
+            // Lado Derecho
+            { id: 4, estado: 'available', clasePos: 't4' },
+            { id: 5, estado: 'available', clasePos: 't5' },
+            { id: 6, estado: 'occupied',  clasePos: 't6' }
         ];
 
         let mesaSeleccionada = null;
@@ -212,70 +274,70 @@
         const mensajeEstado = document.getElementById('mensaje-estado');
         const inputNombre = document.getElementById('nombre');
 
-        // Función para renderizar el plano de mesas
+        // Establecer fecha de hoy por defecto
+        document.getElementById('fecha').valueAsDate = new Date();
+
         function renderizarMesas() {
-            floorPlan.innerHTML = ''; // Limpiar panel
+            // Eliminar mesas existentes pero mantener el pasillo
+            const mesasActuales = floorPlan.querySelectorAll('.table');
+            mesasActuales.forEach(m => m.remove());
 
             mesas.forEach(mesa => {
                 const mesaDiv = document.createElement('div');
-                mesaDiv.classList.add('table', mesa.estado);
+                // Añadimos clase 'table', clase de estado, y clase de posición grid
+                mesaDiv.classList.add('table', mesa.estado, mesa.clasePos);
                 
-                // Si es la mesa actualmente seleccionada, agregar la clase correspondiente
                 if (mesa.id === mesaSeleccionada) {
                     mesaDiv.classList.add('selected');
-                    mesaDiv.classList.remove('available');
                 }
 
-                mesaDiv.innerText = mesa.id;
+                mesaDiv.innerHTML = `<span>Mesa ${mesa.id}</span>`;
 
-                // Evento de clic en la mesa
                 mesaDiv.addEventListener('click', () => {
-                    if (mesa.estado === 'occupied') return; // No hacer nada si está ocupada
+                    if (mesa.estado === 'occupied') return;
 
-                    // Alternar selección
                     if (mesaSeleccionada === mesa.id) {
-                        mesaSeleccionada = null; // Deseleccionar
-                        mensajeEstado.innerText = "Selecciona una mesa disponible en el panel derecho.";
+                        mesaSeleccionada = null;
+                        mensajeEstado.innerText = "Selecciona una mesa rectangular.";
+                        mensajeEstado.style.color = "#f1c40f";
                         btnReservar.disabled = true;
                     } else {
-                        mesaSeleccionada = mesa.id; // Seleccionar nueva
-                        mensajeEstado.innerText = `Mesa ${mesa.id} seleccionada. Completa tus datos.`;
+                        mesaSeleccionada = mesa.id;
+                        mensajeEstado.innerText = `Mesa ${mesa.id} seleccionada (Lado ${mesa.clasePos.startsWith('t1') || mesa.clasePos.startsWith('t2') || mesa.clasePos.startsWith('t3') ? 'Izquierdo' : 'Derecho'}).`;
+                        mensajeEstado.style.color = "#2ecc71";
                         btnReservar.disabled = false;
                     }
-                    renderizarMesas(); // Actualizar vista
+                    renderizarMesas();
                 });
 
                 floorPlan.appendChild(mesaDiv);
             });
         }
 
-        // Evento del botón reservar
         btnReservar.addEventListener('click', () => {
             const nombre = inputNombre.value.trim();
-            
             if (nombre === '') {
-                alert('Por favor, ingresa un nombre para la reserva.');
+                alert('Por favor, ingresa un nombre.');
                 return;
             }
 
-            // Cambiar el estado de la mesa seleccionada a ocupada
             const mesaIndex = mesas.findIndex(m => m.id === mesaSeleccionada);
             if (mesaIndex !== -1) {
                 mesas[mesaIndex].estado = 'occupied';
-                alert(`¡Reserva confirmada para ${nombre} en la Mesa ${mesaSeleccionada}!`);
+                alert(`¡Reserva éxito! Mesa ${mesaSeleccionada} a nombre de ${nombre}.`);
                 
-                // Limpiar formulario y estado
                 mesaSeleccionada = null;
                 inputNombre.value = '';
                 btnReservar.disabled = true;
-                mensajeEstado.innerText = "Selecciona una mesa disponible en el panel derecho.";
+                mensajeEstado.innerText = "Selecciona una mesa rectangular.";
+                mensajeEstado.style.color = "#f1c40f";
                 
-                renderizarMesas(); // Actualizar el gráfico
+                renderizarMesas();
             }
         });
 
-        // Inicializar la aplicación
         renderizarMesas();
     </script>
 </body>
+</html>
 </html>
