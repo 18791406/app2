@@ -1,3 +1,68 @@
+import React, { useState } from 'react';
+import { View, Text, Button, StyleSheet } from 'react-native';
+
+// 1. La Pantalla de Login (El Boceto)
+const PantallaLogin = ({ alHacerClic }) => {
+  return (
+    <View style={styles.contenedor}>
+      <Text style={styles.titulo}>Bienvenido a la App</Text>
+      
+      {/* Al presionar este botón, "simulamos" que inició sesión */}
+      <Button 
+        title="Iniciar Sesión" 
+        onPress={alHacerClic} 
+      />
+    </View>
+  );
+};
+
+// 2. La Pantalla de tu App (Tu código preexistente)
+const PantallaPrincipal = () => {
+  return (
+    <View style={styles.contenedor}>
+      <Text style={styles.titulo}>¡Entraste a la App!</Text>
+      <Text style={styles.texto}>Aquí pegarías todo el contenido de tu app preexistente.</Text>
+    </View>
+  );
+};
+
+// 3. El Controlador Principal (El que decide qué mostrar)
+export default function App() {
+  // Empezamos en "false" para que primero vea el login
+  const [accesoConcedido, setAccesoConcedido] = useState(false);
+
+  // Si el acceso aún no está concedido, mostramos el Login
+  if (!accesoConcedido) {
+    return (
+      <PantallaLogin 
+        alHacerClic={() => setAccesoConcedido(true)} 
+      />
+    );
+  }
+
+  // Si ya hizo clic y el acceso es true, mostramos la App real
+  return <PantallaPrincipal />;
+}
+
+// Estilos básicos para que se vea centrado y prolijo
+const styles = StyleSheet.create({
+  contenedor: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',
+    padding: 20
+  },
+  titulo: { 
+    fontSize: 24, 
+    fontWeight: 'bold', 
+    marginBottom: 20 
+  },
+  texto: {
+    fontSize: 16,
+    textAlign: 'center'
+  }
+});
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
